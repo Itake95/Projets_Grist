@@ -1,2 +1,2 @@
 # Projets_Grist
-Création de formulaire pour Grist
+Page de consultation et réponse du comité Handball
