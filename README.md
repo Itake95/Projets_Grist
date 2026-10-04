@@ -1,2 +1,2 @@
 # Projets_Grist
-Création de formulaire pour Grist
+Page de saisie de l'inscription Rugby pour les enseignants
