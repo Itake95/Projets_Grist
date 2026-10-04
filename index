@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inscriptions par comité</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+  :root { --fond:#fff; --texte:#1c2530; --ligne:#dfe4ea; --entete:#eef2f6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fond:#1b2028; --texte:#e6eaf0; --ligne:#333b47; --entete:#252c37; }
+  }
+  body { margin:0; font:14px system-ui, sans-serif; background:var(--fond); color:var(--texte); }
+  h1 { font-size:16px; margin:12px; }
+  .zone { overflow:auto; max-height:calc(100vh - 90px); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { padding:6px 10px; border-bottom:1px solid var(--ligne); text-align:left; white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+  th { background:var(--entete); position:sticky; top:0; }
+  .vide { padding:16px; }
+</style>
+</head>
+<body>
+<h1 id="titre"></h1>
+<div class="zone"><table><thead id="tete"></thead><tbody id="corps"></tbody></table></div>
+<div id="msg" class="vide"></div>
+
+<script>
+  // ---- À MODIFIER ICI (dans le code, donc invisible et non modifiable pour l'utilisateur) ----
+  const COMITE = "HANDBALL";
+  // Colonnes à ne pas afficher (laisser [] pour tout afficher, "id" est masquée par défaut)
+  const MASQUER = ["id"];
+  // -------------------------------------------------------------------------------------------
+
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function format(v) {
+    if (v === null || v === undefined) return "";
+    if (v instanceof Date) return v.toLocaleString("fr-FR");
+    if (typeof v === "boolean") return v ? "Oui" : "Non";
+    if (Array.isArray(v)) return v.join(", ");
+    if (typeof v === "object") return v.details || JSON.stringify(v);
+    return v;
+  }
+
+  document.getElementById("titre").textContent = "Comité " + COMITE;
+
+  grist.ready({ requiredAccess: "read table" });
+
+  // includeColumns: "normal" = toutes les colonnes de la table, même celles masquées dans la vue
+  grist.onRecords(records => {
+    const lignes = records.filter(r => r.COMITE === COMITE);
+    const noms = records.length
+      ? Object.keys(records[0]).filter(k => !MASQUER.includes(k))
+      : [];
+
+    document.getElementById("tete").innerHTML =
+      "<tr>" + noms.map(n => "<th>" + esc(n) + "</th>").join("") + "</tr>";
+
+    document.getElementById("corps").innerHTML = lignes.map(r =>
+      "<tr>" + noms.map(n => {
+        const t = esc(format(r[n]));
+        return "<td title=\"" + t + "\">" + t + "</td>";
+      }).join("") + "</tr>"
+    ).join("");
+
+    document.getElementById("msg").textContent =
+      lignes.length ? "" : "Aucune ligne pour le comité " + COMITE + ".";
+  }, { includeColumns: "normal" });
+</script>
+</body>
+</html>
