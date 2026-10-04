@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Choisir un comité</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #16213a;
+    --ink: #eef2f6;
+    --sub: #9aa8c0;
+    --line: #263353;
+    --a1: #4f8cff;
+    --a2: #33c98d;
+    --a3: #e0a63a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Söhne", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+  main {
+    width: 100%;
+    max-width: 620px;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  p.lead {
+    color: var(--sub);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0 0 36px;
+    max-width: 46ch;
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  a.choice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  a.choice:hover, a.choice:focus-visible {
+    transform: translateX(4px);
+    border-color: var(--dot);
+    background: #1b2748;
+  }
+  a.choice:focus-visible {
+    outline: 2px solid var(--dot);
+    outline-offset: 2px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--dot);
+    flex-shrink: 0;
+  }
+  .choice[data-c="1"] { --dot: var(--a1); }
+  .choice[data-c="2"] { --dot: var(--a2); }
+  .choice[data-c="3"] { --dot: var(--a3); }
+  .text { flex: 1; }
+  .name {
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+  .hint {
+    color: var(--sub);
+    font-size: 0.85rem;
+    margin-top: 2px;
+  }
+  .arrow {
+    color: var(--sub);
+    font-size: 1.1rem;
+    transition: transform 0.15s ease;
+  }
+  a.choice:hover .arrow { transform: translateX(3px); }
+
+  .row { display: flex; gap: 10px; align-items: stretch; }
+  .row a.choice { flex: 1; min-width: 0; }
+  a.doc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  a.doc svg { width: 18px; height: 18px; color: var(--dot); flex-shrink: 0; }
+  a.doc:hover, a.doc:focus-visible {
+    border-color: var(--dot);
+    background: #1b2748;
+  }
+  a.doc:focus-visible { outline: 2px solid var(--dot); outline-offset: 2px; }
+  .doc[data-c="1"] { --dot: var(--a1); }
+  .doc[data-c="2"] { --dot: var(--a2); }
+  .doc[data-c="3"] { --dot: var(--a3); }
+  @media (max-width: 460px) {
+    a.doc { padding: 0 14px; }
+    a.doc span { display: none; }
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --ink: #16213a;
+      --sub: #5b6784;
+      --line: #e2e6f0;
+    }
+    a.choice:hover, a.choice:focus-visible, a.doc:hover, a.doc:focus-visible { background: #fbfbfe; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Inscription à un dispositif départemental en EPS&nbsp;</h1>
+  <h1>2026 - 2027&nbsp;</h1>
+  <p class="lead">Veuillez consulter le cahier des charges du dispositif départemental qui vous intéresse avant toute inscription.</p>
+  <p class="lead">Cliquez ensuite sur le dispositif départemental auquel vous voulez inscrire votre classe <strong><u>(une seule inscription par classe et par an)</u></strong>.</p>
+
+  <div class="choices">
+    <div class="row">
+      <a class="doc" data-c="1" href="https://nuage03.apps.education.fr/index.php/s/zHAc9FdTLqGxtqy" target="_blank" rel="noopener" aria-label="Documents Football" title="Documents Football"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><span>Cahier des charges FOOTBALL.</span></a>
+      <a class="choice" data-c="1" href="https://grist.numerique.gouv.fr/o/docs/xartt7ATthFi/PROJETS-COMITES/p/10?style=light"  rel="noopener">
+        <span class="dot"></span>
+        <span class="text">
+          <div class="name">FOOTBALL (CE1, CE2, CM1, CM2)</div>
+          
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </div>
+
+    <div class="row">
+      <a class="doc" data-c="2" href="https://nuage03.apps.education.fr/index.php/s/yttnTQoGGSdDLFi" target="_blank" rel="noopener" aria-label="Documents Rugby" title="Documents Rugby"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><span>Cahier des charges RUGBY .  .  .  .</span></a>
+      <a class="choice" data-c="2" href="https://grist.numerique.gouv.fr/o/docs/xartt7ATthFi/PROJETS-COMITES/p/8?style=light" rel="noopener">
+        <span class="dot"></span>
+        <span class="text">
+          <div class="name">RUGBY (CP, CE1, CE2, CM1, CM2)</div>
+          
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </div>
+
+    <div class="row">
+      <a class="doc" data-c="3" href="https://nuage03.apps.education.fr/index.php/s/3PmQpLH5rrtCniT" target="_blank" rel="noopener" aria-label="Documents Handball" title="Documents Handball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><span>Cahier des charges HANDBALL</span></a>
+      <a class="choice" data-c="3" href="https://grist.numerique.gouv.fr/o/docs/xartt7ATthFi/PROJETS-COMITES/p/13?style=light"  rel="noopener">
+        <span class="dot"></span>
+        <span class="text">
+          <div class="name">HANDBALL (CE2, CM1, CM2)</div>
+          
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </div>
+  </div>
+</main>
+</body>
+</html>
