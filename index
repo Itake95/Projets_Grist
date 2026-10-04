@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inscriptions par comité</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+  /* ===== Tableau ===== */
+  :root { --fond:#fff; --texte:#1c2530; --ligne:#dfe4ea; --entete:#eef2f6; --survol:#f5f8fb; --grille:#c3cbd5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fond:#1b2028; --texte:#e6eaf0; --ligne:#333b47; --entete:#252c37; --survol:#222934; --grille:#4a5463; }
+  }
+  body { margin:0; font:14px system-ui, sans-serif; background:var(--fond); color:var(--texte); }
+  h1.page { font-size:16px; margin:12px; }
+  .aide { margin:0 12px 8px; font-size:12px; opacity:.7; }
+  .zone { overflow:auto; max-height:calc(100vh - 110px); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { padding:6px 10px; border:1px solid var(--grille); text-align:left; white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+  th { background:var(--entete); position:sticky; top:0; box-shadow:0 1px 0 var(--grille); }
+  tbody tr { cursor:pointer; user-select:none; }
+  tbody tr:hover { background:var(--survol); }
+  .vide { padding:16px; }
+
+  /* ===== Formulaire de saisie (aspect de Script_formulaire_FOOT_V6) ===== */
+  dialog {
+    border:none; padding:0; background:#f5f6f8; color:#223; border-radius:10px;
+    width:min(960px, 96vw); max-height:94vh; box-shadow:0 4px 24px rgba(0,0,0,.35);
+    font-family:-apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  dialog::backdrop { background:rgba(0,0,0,.5); }
+  dialog * { box-sizing:border-box; }
+  #form { display:flex; flex-direction:column; max-height:94vh; margin:0; }
+  .card { background:#fff; margin:10px; border-radius:10px; box-shadow:0 1px 2px rgba(0,0,0,.12);
+          padding:10px; overflow:auto; flex:1 1 auto; }
+  .card h1 { font-size:24px; margin:0 0 10px; color:#16793e; }
+  .card .sous-titre { font-size:13px; color:#555; margin:0 0 6px; }
+
+  .section-title { margin:24px 0 6px; padding-bottom:4px; font-size:17px; font-weight:700;
+                   color:#16793e; border-bottom:2px solid #16793e; }
+  .section-title.premier { margin-top:8px; }
+
+  label { display:block; font-size:13px; font-weight:600; margin:14px 0 5px; color:#444; }
+  select, input[type=text], input[type=number], input[type=date], input[type=datetime-local], textarea {
+    width:100%; padding:8px 10px; font:inherit; font-size:14px; color:#223;
+    border:1px solid #ccc; border-radius:6px; background:#fff;
+  }
+  textarea { min-height:70px; resize:vertical; }
+  input:disabled, textarea:disabled, select:disabled { background:#f0f0f0; color:#555; cursor:not-allowed; }
+  input[type=checkbox] { width:18px; height:18px; }
+
+  .row { display:flex; flex-wrap:wrap; gap:14px; }
+  .row > .field { flex:1 1 0; min-width:160px; }
+  .row > .field label { margin-top:0; }
+  .row-align { flex-wrap:nowrap; align-items:stretch; }
+  .row-align > .field { display:flex; flex-direction:column; min-width:0; }
+  .row-align > .field label { flex:1 1 auto; margin-bottom:5px; }   /* les champs restent alignés */
+  .row-align > .field input, .row-align > .field select, .row-align > .field textarea { flex:0 0 auto; }
+
+  .classes-grid { display:grid; grid-template-columns:auto repeat(5, 1fr); gap:14px; margin-top:14px; }
+  .classe-col { display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .classe-col label { margin:0; }
+  .classe-col label.classe-ligne { display:flex; align-items:center; height:35px; white-space:nowrap; }
+
+  .inline-field { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:14px; }
+  .inline-field label { margin:0; }
+  .inline-field select, .inline-field input[type=text] { width:auto; min-width:120px; }
+  .info a { color:#16793e; }
+
+  /* Seul champ à compléter */
+  .field.a-completer { background:#eaf5ee; border:2px solid #16793e; border-radius:8px; padding:10px; }
+  .field.a-completer label { color:#16793e; }
+
+  .pied { display:flex; gap:10px; align-items:center; padding:0 10px 10px; }
+  .pied #f-err { flex:1; font-size:13px; min-height:18px; color:#c0392b; }
+  .pied button { padding:10px 22px; border-radius:6px; border:none; font-size:15px; cursor:pointer; }
+  #f-ok { background:#16793e; color:#fff; }
+  #f-ok:disabled { background:#9bbfa9; cursor:not-allowed; }
+  #f-annuler { background:#e3e6ea; color:#223; }
+
+  @media (max-width:600px) {
+    .row-align { flex-wrap:wrap; }
+    .row-align > .field { flex:1 1 100%; }
+    .classes-grid { grid-template-columns:repeat(2, 1fr); }
+    .classe-titres { grid-column:1 / -1; flex-direction:row; gap:20px; }
+    .classe-titres label:first-child { display:none; }
+  }
+</style>
+</head>
+<body>
+<h1 class="page" id="titre"></h1>
+<p class="aide">Double-cliquez sur une ligne pour renseigner la disponibilité du comité.</p>
+<div class="zone"><table><thead id="tete"></thead><tbody id="corps"></tbody></table></div>
+<div id="msg" class="vide"></div>
+
+<dialog id="dlg">
+  <form id="form" method="dialog">
+    <div class="card" id="f-card"></div>
+    <div class="pied">
+      <span id="f-err"></span>
+      <button type="button" id="f-annuler">Annuler</button>
+      <button type="submit" id="f-ok">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  // ---- À MODIFIER ICI (dans le code, donc invisible et non modifiable pour l'utilisateur) ----
+  const COMITE = "FOOTBALL";
+  // Colonnes à ne pas afficher (insensible à la casse). Pour masquer aussi MAILENS2, ajoutez-le ici.
+  const MASQUER = ["id", "lonecole", "latecole", "COMITE"];
+  // Seules ces colonnes sont modifiables dans le formulaire : toutes les autres sont verrouillées
+  const EDITABLES = ["Disponibilite_du_comite"];
+  // Titre du formulaire
+  const TITRE_FORM = "FORMULAIRE D'INSCRIPTION AU DISPOSITIF DEPARTEMENTAL FOOTBALL";
+
+  // Mise en page du formulaire (reprend Script_formulaire_FOOT_V6).
+  // F(colonne, libellé affiché). Une colonne absente de la table est simplement ignorée.
+  const F = (col, label) => ({ col, label });
+  const NIVEAUX = ["CP", "CE1", "CE2", "CM1", "CM2"]; // colonnes CPG/CPF, CE1G/CE1F, ...
+  const SECTIONS = [
+    { titre: "Ecole", blocs: [
+      { type: "row", align: true, champs: [
+        F("Cree_le", "Créé le :"), F("VILLE", "Ville :"), F("UAI", "UAI :"), F("ECOLE", "Ecole :") ] },
+      { type: "row", align: true, champs: [
+        F("MAILECOLE", "Email de l'école :"), F("TELECOLE", "Téléphone de l'école :"),
+        F("USEP", "Votre classe est elle affiliée à l'USEP 95 ? (OUI/NON) :"),
+        F("FOOTALECOLE", "Classe inscrite sur le site de la FFF (OUI/NON) :") ] } ] },
+    { titre: "Classe", blocs: [
+      { type: "row", champs: [ F("NOMENS", "Nom :"), F("EFFTOTAL", "Effectif total :"), F("MAILENS2", "Email professionnel :") ] },
+      { type: "classes" },
+      { type: "row", champs: [ F("LIEU1", "Lieu de pratique :"), F("RENCONTRE", "Lieu de rencontre :") ] } ] }
+  ];
+  // Dernière section : réponse du comité (contient le champ à compléter)
+  const SECTION_COMITE = { titre: "RÉPONSE DU COMITÉ", blocs: [
+    { type: "row", align: true, champs: [
+      F("BESOININT", "Modalité de mise en oeuvre (Seul, avec ETAPS, Intervenant du comité) :"),
+      F("Disponibilite_du_comite", "Disponibilité du comité :") ] } ] };
+
+  // Ordre des colonnes du TABLEAU (indépendant de celui du formulaire)
+  const ORDRE_TABLE = ["Cree_le", "VILLE", "UAI", "ECOLE", "MAILECOLE", "TELECOLE", "USEP", "FOOTALECOLE",
+    "NOMENS", "MAILENS2", "CPG", "CPF", "CE1G", "CE1F", "CE2G", "CE2F", "CM1G", "CM1F", "CM2G", "CM2F",
+    "EFFTOTAL", "LIEU1", "COMMENTAIRE", "RENCONTRE", "BESOININT", "Disponibilite_du_comite"];
+  // -------------------------------------------------------------------------------------------
+
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function format(v) {
+    if (v === null || v === undefined) return "";
+    if (v instanceof Date) return v.toLocaleString("fr-FR");
+    if (typeof v === "boolean") return v ? "Oui" : "Non";
+    if (Array.isArray(v)) return v.join(", ");
+    if (typeof v === "object") return v.details || JSON.stringify(v);
+    return v;
+  }
+
+  let RECORDS = [];   // toutes les lignes de la table
+  let NOMS = [];      // colonnes affichées dans le tableau
+  let CLES = [];      // colonnes existantes (hors MASQUER)
+  let ligneOuverte = null;
+  const masquee = k => MASQUER.some(m => m.toLowerCase() === k.toLowerCase());
+
+  document.getElementById("titre").textContent = "Comité " + COMITE;
+
+  // "full" est nécessaire pour pouvoir modifier les données
+  grist.ready({ requiredAccess: "full" });
+
+  // Colonnes citées dans la mise en page, dans l'ordre
+  function colonnesDe(section) {
+    return section.blocs.flatMap(b =>
+      b.type === "row" ? b.champs.map(c => c.col)
+      : b.type === "inline" ? [b.champ.col]
+      : NIVEAUX.flatMap(n => [n + "G", n + "F"]));
+  }
+  function colonnesOrdonnees(cles) {
+    const fin = "Disponibilite_du_comite";
+    const base = ORDRE_TABLE.filter(c => c !== fin);
+    const autres = cles.filter(k => !ORDRE_TABLE.includes(k));
+    return [...base, ...autres, fin].filter(c => cles.includes(c));
+  }
+
+  grist.onRecords(records => {
+    RECORDS = records;
+    const lignes = records.filter(r => r.COMITE === COMITE);
+    CLES = records.length ? Object.keys(records[0]).filter(k => !masquee(k)) : [];
+    NOMS = colonnesOrdonnees(CLES);
+
+    document.getElementById("tete").innerHTML =
+      "<tr>" + NOMS.map(n => "<th>" + esc(n) + "</th>").join("") + "</tr>";
+
+    document.getElementById("corps").innerHTML = lignes.map(r =>
+      "<tr data-id=\"" + r.id + "\">" + NOMS.map(n => {
+        const t = esc(format(r[n]));
+        return "<td title=\"" + t + "\">" + t + "</td>";
+      }).join("") + "</tr>"
+    ).join("");
+
+    document.getElementById("msg").textContent =
+      lignes.length ? "" : "Aucune ligne pour le comité " + COMITE + ".";
+  }, { includeColumns: "normal" });
+
+  // ---------- Formulaire de saisie ----------
+
+  // Déduit le type d'une colonne d'après ses valeurs existantes
+  function typeColonne(nom) {
+    const v = RECORDS.map(r => r[nom]).find(x => x !== null && x !== undefined && x !== "");
+    if (typeof v === "boolean") return "bool";
+    if (typeof v === "number") return "num";
+    if (v instanceof Date) {
+      const dates = RECORDS.map(r => r[nom]).filter(x => x instanceof Date);
+      return dates.every(d => d.getTime() % 86400000 === 0) ? "date" : "datetime";
+    }
+    if (Array.isArray(v) || (v && typeof v === "object")) return "lecture";
+    return "texte";
+  }
+
+  const pad = n => String(n).padStart(2, "0");
+  function versInput(v, type) {
+    if (v === null || v === undefined) return "";
+    if (type === "date") return v.toISOString().slice(0, 10);
+    if (type === "datetime") {
+      return v.getFullYear() + "-" + pad(v.getMonth() + 1) + "-" + pad(v.getDate()) +
+             "T" + pad(v.getHours()) + ":" + pad(v.getMinutes());
+    }
+    return v;
+  }
+
+  // Contrôle seul (sans libellé) : verrouillé sauf pour les colonnes de EDITABLES
+  function controle(nom, rec, titre) {
+    const type = typeColonne(nom);
+    const val = rec[nom];
+    const editable = EDITABLES.includes(nom) && type !== "lecture";
+    const dis = editable ? "" : " disabled";
+    const attr = " data-col=\"" + esc(nom) + "\" data-type=\"" + type + "\"" + (titre ? " title=\"" + esc(titre) + "\"" : "");
+
+    if (!editable) {
+      // Champ verrouillé : affichage de la valeur telle qu'elle est dans la table
+      const s = String(format(val));
+      return (s.length > 60 || s.includes("\n"))
+        ? "<textarea disabled>" + esc(s) + "</textarea>"
+        : "<input type=\"text\" disabled value=\"" + esc(s) + "\">";
+    }
+    if (type === "bool")
+      return "<input type=\"checkbox\"" + attr + (val ? " checked" : "") + ">";
+    if (type === "num")
+      return "<input type=\"number\" step=\"any\"" + attr + " value=\"" + esc(val ?? "") + "\">";
+    if (type === "date")
+      return "<input type=\"date\"" + attr + " value=\"" + esc(versInput(val, type)) + "\">";
+    if (type === "datetime")
+      return "<input type=\"datetime-local\"" + attr + " value=\"" + esc(versInput(val, type)) + "\">";
+
+    const s = String(val ?? "");
+    if (s.length > 60 || s.includes("\n"))
+      return "<textarea" + attr + ">" + esc(s) + "</textarea>";
+    // Suggestions : valeurs déjà utilisées dans la colonne (utile si c'est une liste de choix)
+    const valeurs = [...new Set(RECORDS.map(r => r[nom]).filter(x => typeof x === "string" && x))].slice(0, 30);
+    const idl = "dl-" + nom;
+    return "<input type=\"text\"" + attr + (valeurs.length ? " list=\"" + esc(idl) + "\"" : "") + " value=\"" + esc(s) + "\">" +
+      (valeurs.length ? "<datalist id=\"" + esc(idl) + "\">" + valeurs.map(v => "<option value=\"" + esc(v) + "\">").join("") + "</datalist>" : "");
+  }
+
+  function champ(f, rec) {
+    if (!CLES.includes(f.col)) return "";
+    const edit = EDITABLES.includes(f.col);
+    return "<div class=\"field" + (edit ? " a-completer" : "") + "\"><label>" + esc(f.label) + "</label>" +
+           controle(f.col, rec) + "</div>";
+  }
+
+  function blocHtml(b, rec) {
+    if (b.type === "row") {
+      const champs = b.champs.map(f => champ(f, rec)).join("");
+      return champs ? "<div class=\"row" + (b.align ? " row-align" : "") + "\">" + champs + "</div>" : "";
+    }
+    if (b.type === "inline") {
+      if (!CLES.includes(b.champ.col)) return "";
+      return "<div class=\"inline-field\"><label>" + esc(b.champ.label) + "</label>" + controle(b.champ.col, rec) + "</div>";
+    }
+    if (b.type === "classes") {
+      const cols = NIVEAUX.filter(n => CLES.includes(n + "G") || CLES.includes(n + "F"));
+      if (!cols.length) return "";
+      return "<div class=\"classes-grid\">" +
+        "<div class=\"classe-col classe-titres\"><label>&nbsp;</label>" +
+        "<label class=\"classe-ligne\">Effectif garçon :</label><label class=\"classe-ligne\">Effectif fille :</label></div>" +
+        cols.map(n =>
+          "<div class=\"classe-col\"><label>" + n + "</label>" +
+          (CLES.includes(n + "G") ? controle(n + "G", rec, n + " - G") : "<input type=\"text\" disabled>") +
+          (CLES.includes(n + "F") ? controle(n + "F", rec, n + " - F") : "<input type=\"text\" disabled>") +
+          "</div>").join("") +
+        "</div>";
+    }
+    return "";
+  }
+
+  function sectionHtml(s, rec, premier) {
+    const corps = s.blocs.map(b => blocHtml(b, rec)).join("");
+    return corps ? "<div class=\"section-title" + (premier ? " premier" : "") + "\">" + esc(s.titre) + "</div>" + corps : "";
+  }
+
+  function ouvrirFormulaire(id) {
+    const rec = RECORDS.find(r => r.id === id);
+    if (!rec) return;
+    ligneOuverte = id;
+    document.getElementById("f-err").textContent = "";
+    document.getElementById("f-ok").disabled = false;
+
+    const toutes = [...SECTIONS, SECTION_COMITE];
+    document.getElementById("f-card").innerHTML =
+      "<h1>" + esc(TITRE_FORM) + "</h1>" +
+      "<p class=\"sous-titre\">Seul le champ « Disponibilité du comité » est à renseigner ; les autres informations sont en lecture seule.</p>" +
+      toutes.map((s, i) => sectionHtml(s, rec, i === 0)).join("");
+
+    document.getElementById("dlg").showModal();
+    const aCompleter = document.querySelector("#f-card .a-completer input, #f-card .a-completer textarea");
+    if (aCompleter) aCompleter.focus();
+  }
+
+  // Lit le formulaire et ne renvoie que les champs modifiés
+  function lireModifs(rec) {
+    const fields = {};
+    document.querySelectorAll("#f-card [data-col]").forEach(el => {
+      if (el.disabled) return;
+      const nom = el.dataset.col, type = el.dataset.type;
+      let nouveau, ancien = rec[nom];
+      if (type === "bool") {
+        nouveau = el.checked;
+        if (nouveau !== !!ancien) fields[nom] = nouveau;
+        return;
+      }
+      const brut = el.value;
+      if (type === "num") {
+        nouveau = brut === "" ? null : Number(brut);
+        if (nouveau !== (ancien ?? null)) fields[nom] = nouveau;
+      } else if (type === "date") {
+        nouveau = brut === "" ? null : new Date(brut + "T00:00:00Z");
+        if ((nouveau && nouveau.getTime()) !== (ancien ? ancien.getTime() : null) && !(nouveau === null && !ancien)) fields[nom] = nouveau;
+      } else if (type === "datetime") {
+        nouveau = brut === "" ? null : new Date(brut);
+        if ((nouveau && nouveau.getTime()) !== (ancien ? ancien.getTime() : null) && !(nouveau === null && !ancien)) fields[nom] = nouveau;
+      } else {
+        if (brut !== String(ancien ?? "")) fields[nom] = brut;
+      }
+    });
+    return fields;
+  }
+
+  document.getElementById("corps").addEventListener("dblclick", e => {
+    const tr = e.target.closest("tr[data-id]");
+    if (tr) ouvrirFormulaire(Number(tr.dataset.id));
+  });
+
+  document.getElementById("f-annuler").addEventListener("click", () => document.getElementById("dlg").close());
+
+  document.getElementById("form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const rec = RECORDS.find(r => r.id === ligneOuverte);
+    const err = document.getElementById("f-err");
+    const ok = document.getElementById("f-ok");
+    if (!rec) return;
+
+    const fields = lireModifs(rec);
+    if (!Object.keys(fields).length) { document.getElementById("dlg").close(); return; }
+
+    ok.disabled = true;
+    err.style.color = "#16793e";
+    err.textContent = "Enregistrement en cours…";
+    try {
+      await grist.getTable().update({ id: ligneOuverte, fields });
+      document.getElementById("dlg").close();
+    } catch (ex) {
+      err.style.color = "#c0392b";
+      err.textContent = "Erreur : " + (ex && ex.message ? ex.message : ex);
+      ok.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
