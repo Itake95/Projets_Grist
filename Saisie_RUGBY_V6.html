@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Formulaire BASE</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f5f6f8;
+    margin: 0;
+    padding: 10px;
+    color: #223;
+  }
+  .card {
+    max-width: 960px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    padding: 10px 10px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 10px;
+    color: #16793e;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 5px;
+    color: #444;
+  }
+  select, input {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+  }
+  input[readonly] {
+    background: #f0f0f0;
+    color: #555;
+  }
+  button {
+    margin-top: 22px;
+    width: 100%;
+    padding: 10px;
+    background: #16793e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: #9bbfa9;
+    cursor: not-allowed;
+  }
+  #status {
+    margin-top: 10px;
+    font-size: 13px;
+    min-height: 18px;
+  }
+  #status.ok { color: #16793e; }
+  #status.err { color: #c0392b; }
+
+  .section-title {
+    margin: 24px 0 6px;
+    padding-bottom: 4px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #16793e;
+    border-bottom: 2px solid #16793e;
+  }
+  .section-title:first-of-type {
+    margin-top: 8px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .row > .field {
+    flex: 1 1 0;
+    min-width: 160px;
+  }
+  .row > .field label,
+  .col label {
+    margin-top: 0;
+  }
+  .col {
+    flex: 1 1 0;
+    min-width: 140px;
+  }
+  /* Ligne BESOININT / LIEU1 / RENCONTRE : côte à côte, label au-dessus */
+  .row-3,
+  .row-align {
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .row-3 > .field,
+  .row-align > .field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .row-3 > .field label,
+  .row-align > .field label {
+    flex: 1 1 auto;   /* le label prend la hauteur restante : les listes restent alignées */
+    margin-bottom: 5px;
+  }
+  .row-3 > .field select,
+  .row-align > .field select,
+  .row-align > .field input {
+    flex: 0 0 auto;
+  }
+  /* Section Classe : 5 colonnes (CP à CM2) x 2 lignes (G / F) */
+  .classes-grid {
+    display: grid;
+    grid-template-columns: auto repeat(5, 1fr);
+    gap: 14px;
+  }
+  .classe-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .classe-col label {
+    margin: 0;
+  }
+  .classe-col label.classe-ligne {
+    display: flex;
+    align-items: center;
+    height: 35px;       /* même hauteur qu'un champ */
+    white-space: nowrap;
+  }
+  @media (max-width: 600px) {
+    .classes-grid { grid-template-columns: repeat(2, 1fr); }
+    .classe-titres { grid-column: 1 / -1; flex-direction: row; gap: 20px; }
+    .classe-titres label:first-child { display: none; }
+  }
+  /* Champ sur une seule ligne : label puis liste réduite à son contenu */
+  .inline-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .inline-field label {
+    margin: 0;
+  }
+  .inline-field select {
+    width: auto;
+  }
+  @media (max-width: 600px) {
+    .row-3,
+    .row-align { flex-wrap: wrap; }
+    .row-3 > .field,
+    .row-align > .field { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>FORMULAIRE D'INSCRIPTION AU DISPOSITIF DEPARTEMENTAL RUGBY</h1>
+
+  <form id="form">
+
+    <div class="section-title">Ecole</div>
+    <div class="row row-align">
+      <div class="field">
+        <label for="ville">Dans quelle ville exercez-vous ? :</label>
+        <select id="ville" required>
+          <option value="">-- Choisir une ville --</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ecole">Ecoles :</label>
+        <select id="ecole" required disabled>
+          <option value="">-- Choisir d'abord une ville --</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="uai">UAI :</label>
+        <input type="text" id="uai" readonly placeholder="Rempli automatiquement">
+      </div>
+      <div class="field">
+        <label for="USEP">Votre classe est elle affiliée à l'USEP 95 ? (OUI/NON) :</label>
+        <select id="USEP" required>
+          <option value="">--</option>
+          <option value="OUI">OUI</option>
+          <option value="NON">NON</option>
+        </select>
+      </div>
+    </div>
+    <div class="section-title">Classe</div>
+    <div class="row">
+      <div class="field">
+        <label for="nomens">votre nom ?</label>
+        <input type="text" id="nomens" required>
+      </div>
+      <div class="field">
+        <label for="mailens">votre email professionnel ?</label>
+        <input type="text" id="mailens" required>
+      </div>
+    </div>
+
+    <div class="classes-grid">
+      <div class="classe-col classe-titres">
+        <label>&nbsp;</label>
+        <label class="classe-ligne">Effectif garçon :</label>
+        <label class="classe-ligne">Effectif fille :</label>
+      </div>
+      <div class="classe-col">
+        <label for="CPG">CP</label>
+        <input type="text" Value="0" id="CPG" title="CP - G" required>
+        <input type="number" Value="0" id="CPF" title="CP - F" required>
+      </div>
+      <div class="classe-col">
+        <label for="CE1G">CE1</label>
+        <input type="text" Value="0" id="CE1G" title="CE1 - G" required>
+        <input type="number" Value="0" id="CE1F" title="CE1 - F" required>
+      </div>
+      <div class="classe-col">
+        <label for="CE2G">CE2</label>
+        <input type="text" Value="0" id="CE2G" title="CE2 - G" required>
+        <input type="number" Value="0" id="CE2F" title="CE2 - F" required>
+      </div>
+      <div class="classe-col">
+        <label for="CM1G">CM1</label>
+        <input type="text" Value="0" id="CM1G" title="CM1 - G" required>
+        <input type="number" Value="0" id="CM1F" title="CM1 - F" required>
+      </div>
+      <div class="classe-col">
+        <label for="CM2G">CM2</label>
+        <input type="text" Value="0" id="CM2G" title="CM2 - G" required>
+        <input type="number" Value="0" id="CM2F" title="CM2 - F" required>
+      </div>
+    </div>
+
+    <div class="section-title">Modalités de mise en oeuvre du projet</div>
+    <div class="row row-3">
+      <div class="field">
+        <label for="besoinint">Modalite de mise en oeuvre de la séquence d'apprentissage (Seul, avec ETAPS, Intervenant du comité)</label>
+        <select id="besoinint" title="DEMANDE D'AIDE DU COMITE POUR LA MISE EN PLACE D'UN MODULE  Vous pouvez demander une aide du comité pour mettre en place votre module, ou le mener par vous-même.Si le module est mené conjointement avec un intervenant extérieur (ETAPS, éducateur sportif), merci de cocher la réponse correspondante.  Suivant votre demande, le comité prendra contact avec vous. Si au minimum deux classes de votre école demandent une intervention et en fonction des disponibilités, un intervenant, agréé par la DSDEN 95, pourra apporter son aide au cours du module sur 3 séances maximum que vous aurez préalablement définies.">
+          <option value="">-- Choisir une modalité --</option>
+          <option value="Seul">Seul</option>
+          <option value="ETAPS">ETAPS</option>
+          <option value="Intervenant comité">Intervenant comité</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="LIEU1">Lieu de pratique (Ecole, Stade, Gymnase): </label>
+        <select id="LIEU1" >
+          <option value="">-- Choisir un lieu de pratique --</option>
+          <option value="Ecole">Ecole</option>
+          <option value="Stade">Stade</option>
+          <option value="Gymnase">Gymnase</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="RENCONTRE"> Choisissez un lieu de rencontre: </label>
+        <select id="RENCONTRE" title="Sous réserve d'un nombre suffisant d'inscription." required>
+          <option value="">-- Choisir un lieu de rencontre --</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">COMMENTAIRE</div>
+    <div class="field">
+        <label for="COMMENTAIRE">Commentaire (éléments spécifiques à votre classe que vous souhaitez porter à notre connaissance) ?</label>
+        <input type="text" id="COMMENTAIRE" >
+      </div>
+
+
+    <button type="submit" id="submitBtn">Enregistrer</button>
+    <div id="status"></div>
+  </form>
+</div>
+
+<script>
+/*
+  ATTENTION — à vérifier avant utilisation :
+  Ce widget suppose les tables et colIds suivants dans le document Grist.
+  Les colId réels (visibles dans Grist via "Afficher les colonnes cachées" /
+  page "Raw Data") peuvent différer des libellés affichés si des accents ou
+  espaces ont été utilisés à la création des colonnes. Adaptez les constantes
+  ci-dessous si besoin — je ne peux pas vérifier vos colId réels depuis ici.
+
+  - Table "COMMUNES"   -> colonne VILLE
+  - Table "ECOLES95"   -> colonnes VILLE, NOMECOLE, UAIECOLE
+  - Table "BASE"       -> colonnes UAI, NOMENS, NIVEAU1, BESOININT, COMITE
+  - Table "RENCONTRES" -> colonnes COMITE, LIEU
+    (nom de table et colId à VÉRIFIER dans Grist : "Raw Data" / "Afficher les
+    colonnes cachées". Je n'ai pas pu accéder à votre document pour confirmer
+    ces noms — adaptez les constantes TABLE_RENCONTRES / COL_RENC_COMITE /
+    COL_RENC_LIEU ci-dessous si besoin.)
+LIGNES POUR LE CHAMPS COMITE
+<div class="field">
+        <label for="comite">Choix du comité : </label>
+        <input type="text" id="comite">
+      </div>
+
+
+*/
+
+const TABLE_COMMUNES   = "COMMUNES";
+const TABLE_ECOLES     = "ECOLES95";
+const TABLE_BASE       = "BASE";
+const TABLE_RENCONTRES = "RENCONTRES";
+const COL_RENC_COMITE  = "COMITE";
+const COL_RENC_LIEU    = "LIEU";
+
+// Comité de ce formulaire (doit correspondre à la valeur écrite dans BASE.COMITE
+// plus bas, et à la valeur filtrée dans la table RENCONTRES).
+const COMITE_ACTUEL = "RUGBY";
+
+const COL_VILLE= "VILLE";
+const COL_VILLEECOLE= "VILLEECOLE";
+const COL_NOMECOLE= "NOMECOLE";
+const COL_UAIECOLE= "UAIECOLE";
+const COL_BASE_UAI= "UAI";
+const COL_BASE_USEP= "USEP";
+const COL_BASE_NOMENS= "NOMENS";
+const COL_BASE_MAILENS= "MAILENS";
+const COL_BASE_CPG= "CPG";
+const COL_BASE_CPF= "CPF";
+const COL_BASE_CE1G= "CE1G";
+const COL_BASE_CE1F= "CE1F";
+const COL_BASE_CE2G= "CE2G";
+const COL_BASE_CE2F= "CE2F";
+const COL_BASE_CM1G= "CM1G";
+const COL_BASE_CM1F= "CM1F";
+const COL_BASE_CM2G= "CM2G";
+const COL_BASE_CM2F= "CM2F";
+const COL_BASE_BESOININT= "BESOININT";
+const COL_BASE_LIEU1= "LIEU1";
+const COL_BASE_LIEU2= "LIEU2";
+const COL_BASE_LIEU3= "LIEU3";
+const COL_BASE_RENCONTRE= "RENCONTRE";
+const COL_BASE_COMMENTAIRE= "COMMENTAIRE";
+
+const COL_BASE_COMITE= "COMITE";
+
+let ecolesData = []; // lignes de la table ECOLES95
+
+const villeSelect      = document.getElementById("ville");
+const ecoleSelect      = document.getElementById("ecole");
+const uaiInput         = document.getElementById("uai");
+const rencontreSelect  = document.getElementById("RENCONTRE");
+const statusDiv        = document.getElementById("status");
+const URL_PAGE_SUIVANTE = "https://grist.numerique.gouv.fr/o/docs/xartt7ATthFi/PROJETS-COMITES/p/18?style=light";
+const submitBtn        = document.getElementById("submitBtn");
+const form             = document.getElementById("form");
+
+function setStatus(msg, ok) {
+  statusDiv.textContent = msg;
+  statusDiv.className = ok ? "ok" : "err";
+}
+
+async function init() {
+  grist.ready({ requiredAccess: "full" });
+
+  try {
+    const [communesTable, ecolesTable, rencontresTable] = await Promise.all([
+      grist.docApi.fetchTable(TABLE_COMMUNES),
+      grist.docApi.fetchTable(TABLE_ECOLES),
+      grist.docApi.fetchTable(TABLE_RENCONTRES)
+    ]);
+
+    // Liste des villes (dédupliquée et triée) à partir de COMMUNES
+    const villes = [...new Set(communesTable[COL_VILLE])]
+      .filter(v => v !== null && v !== undefined && v !== "")
+      .sort((a, b) => String(a).localeCompare(String(b), "fr"));
+
+    villes.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      villeSelect.appendChild(opt);
+    });
+
+    // --- DIAGNOSTIC : à consulter dans la console (F12) si la liste Ecoles reste vide ---
+    console.log("Colonnes reçues pour COMMUNES :", Object.keys(communesTable));
+    console.log("Colonnes reçues pour ECOLES95 :", Object.keys(ecolesTable));
+    console.log("Exemple de valeurs VILLE (COMMUNES) :", communesTable[COL_VILLE]?.slice(0, 5));
+    console.log("Exemple de valeurs VILLE (ECOLES95) :", ecolesTable[COL_VILLEECOLE]?.slice(0, 5));
+    console.log("Exemple de valeurs NOMECOLE (ECOLES95) :", ecolesTable[COL_NOMECOLE]?.slice(0, 5));
+    // --- fin diagnostic ---
+
+    if (!ecolesTable[COL_VILLEECOLE] || !ecolesTable[COL_NOMECOLE]) {
+      setStatus(
+        "Colonne introuvable dans ECOLES95 (vérifiez COL_VILLE/COL_NOMECOLE dans le code — voir console F12 pour les vrais colId).",
+        false
+      );
+    }
+
+    // Reconstitue un tableau de lignes { VILLE, NOMECOLE, UAIECOLE } pour ECOLES95
+    const n = ecolesTable.id.length;
+    for (let i = 0; i < n; i++) {
+      ecolesData.push({
+        ville: ecolesTable[COL_VILLEECOLE]?.[i],
+        nomEcole: ecolesTable[COL_NOMECOLE]?.[i],
+        uai: ecolesTable[COL_UAIECOLE]?.[i]
+      });
+    }
+    console.log("ecolesData reconstitué (" + ecolesData.length + " lignes), échantillon :", ecolesData.slice(0, 5));
+
+    // --- DIAGNOSTIC RENCONTRES : à consulter dans la console (F12) si la liste reste vide ---
+    console.log("Colonnes reçues pour RENCONTRES :", Object.keys(rencontresTable));
+    console.log("Exemple de valeurs COMITE (RENCONTRES) :", rencontresTable[COL_RENC_COMITE]?.slice(0, 5));
+    console.log("Exemple de valeurs LIEU (RENCONTRES) :", rencontresTable[COL_RENC_LIEU]?.slice(0, 5));
+    // --- fin diagnostic ---
+
+    if (!rencontresTable[COL_RENC_COMITE] || !rencontresTable[COL_RENC_LIEU]) {
+      setStatus(
+        "Colonne introuvable dans RENCONTRES (vérifiez COL_RENC_COMITE/COL_RENC_LIEU dans le code — voir console F12 pour les vrais colId).",
+        false
+      );
+    } else {
+      const nRenc = rencontresTable.id.length;
+      const lieuxDuComite = [];
+      for (let i = 0; i < nRenc; i++) {
+        if (normalise(rencontresTable[COL_RENC_COMITE][i]) === normalise(COMITE_ACTUEL)) {
+          const lieu = rencontresTable[COL_RENC_LIEU][i];
+          if (lieu !== null && lieu !== undefined && lieu !== "") {
+            lieuxDuComite.push(lieu);
+          }
+        }
+      }
+      const lieuxUniques = [...new Set(lieuxDuComite)]
+        .sort((a, b) => String(a).localeCompare(String(b), "fr"));
+
+      console.log("Lieux de rencontre pour le comité " + COMITE_ACTUEL + " :", lieuxUniques);
+
+      lieuxUniques.forEach(l => {
+        const opt = document.createElement("option");
+        opt.value = l;
+        opt.textContent = l;
+        rencontreSelect.appendChild(opt);
+      });
+
+      if (lieuxUniques.length === 0) {
+        setStatus(
+          "Aucun lieu de rencontre trouvé dans RENCONTRES pour le comité " + COMITE_ACTUEL + ".",
+          false
+        );
+      }
+    }
+  } catch (e) {
+    setStatus("Erreur au chargement des données Grist : " + e.message, false);
+  }
+}
+
+// Normalise une chaîne pour comparaison tolérante (espaces, casse)
+function normalise(str) {
+  return (str ?? "").toString().trim().toLowerCase();
+}
+
+villeSelect.addEventListener("change", () => {
+  const ville = villeSelect.value;
+  ecoleSelect.innerHTML = "";
+  uaiInput.value = "";
+
+  if (!ville) {
+    ecoleSelect.disabled = true;
+    const opt = document.createElement("option");
+    opt.textContent = "-- Choisir d'abord une ville --";
+    ecoleSelect.appendChild(opt);
+    return;
+  }
+
+  const ecolesDeLaVille = ecolesData.filter(e => normalise(e.ville) === normalise(ville));
+  console.log("Ville sélectionnée :", ville, "-> écoles trouvées :", ecolesDeLaVille.length, ecolesDeLaVille);
+
+  ecoleSelect.disabled = false;
+  const defaultOpt = document.createElement("option");
+  defaultOpt.value = "";
+  defaultOpt.textContent = "-- Choisir une école --";
+  ecoleSelect.appendChild(defaultOpt);
+
+  ecolesDeLaVille.forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e.nomEcole;
+    opt.textContent = e.nomEcole;
+    ecoleSelect.appendChild(opt);
+  });
+});
+
+ecoleSelect.addEventListener("change", () => {
+  const ville = villeSelect.value;
+  const nomEcole = ecoleSelect.value;
+  const match = ecolesData.find(e => normalise(e.ville) === normalise(ville) && normalise(e.nomEcole) === normalise(nomEcole));
+  uaiInput.value = match ? (match.uai ?? "") : "";
+});
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!uaiInput.value) {
+    setStatus("Impossible d'enregistrer : aucun UAI trouvé pour ce couple Ville/École.", false);
+    return;
+  }
+
+  submitBtn.disabled = true;
+  setStatus("Enregistrement en cours…", true);
+
+  const record = {
+    [COL_BASE_UAI]: uaiInput.value,
+    [COL_BASE_USEP]: document.getElementById("USEP").value,
+    [COL_BASE_NOMENS]: document.getElementById("nomens").value,
+    [COL_BASE_MAILENS]: document.getElementById("mailens").value,
+    [COL_BASE_CPG]: document.getElementById("CPG").value,
+    [COL_BASE_CPF]: document.getElementById("CPF").value,
+    [COL_BASE_CE1G]: document.getElementById("CE1G").value,
+    [COL_BASE_CE1F]: document.getElementById("CE1F").value,
+    [COL_BASE_CE2G]: document.getElementById("CE2G").value,
+    [COL_BASE_CE2F]: document.getElementById("CE2F").value,
+    [COL_BASE_CM1G]: document.getElementById("CM1G").value,
+    [COL_BASE_CM1F]: document.getElementById("CM1F").value,
+    [COL_BASE_CM2G]: document.getElementById("CM2G").value,
+    [COL_BASE_CM2F]: document.getElementById("CM2F").value,
+    
+    [COL_BASE_BESOININT]: document.getElementById("besoinint").value,
+    [COL_BASE_LIEU1]: document.getElementById("LIEU1").value,
+    [COL_BASE_RENCONTRE]: document.getElementById("RENCONTRE").value,
+    [COL_BASE_COMMENTAIRE]: document.getElementById("COMMENTAIRE").value,
+    
+    [COL_BASE_COMITE]: COMITE_ACTUEL // document.getElementById("comite").value
+  };
+
+  try {
+    await grist.docApi.applyUserActions([
+      ["AddRecord", TABLE_BASE, null, record]
+    ]);
+    setStatus("Enregistrement ajouté avec succès.", true);
+    form.reset();
+    ecoleSelect.disabled = true;
+    ecoleSelect.innerHTML = '<option value="">-- Choisir d\'abord une ville --</option>';
+    uaiInput.value = "";
+    // Redirection vers la page suivante après une courte pause (message de succès visible)
+    setTimeout(() => {
+      try {
+        window.top.location.href = URL_PAGE_SUIVANTE;
+      } catch (e) {
+        window.location.href = URL_PAGE_SUIVANTE;
+      }
+    }, 1500);
+  } catch (err) {
+    setStatus("Erreur lors de l'enregistrement : " + err.message, false);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+init();
+</script>
+</body>
+</html>

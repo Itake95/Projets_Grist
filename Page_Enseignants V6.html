@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes inscriptions</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+  :root { --fond:#fff; --texte:#1c2530; --ligne:#c9d0d8; --label:#4a5563; --accent:#1f6feb; --alerte:#ffcf85; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fond:#1b2028; --texte:#e6eaf0; --ligne:#3a4350; --label:#a5b0bf; --accent:#6ea8ff; --alerte:#8a5a12; }
+  }
+  body { margin:0; font:13px system-ui, sans-serif; background:var(--fond); color:var(--texte); }
+  .recherche { padding:12px; display:flex; flex-direction:column; gap:6px; max-width:420px; }
+  .recherche label { font-weight:600; font-size:14px; }
+  .recherche input { font:inherit; padding:8px 10px; border:1px solid var(--ligne); border-radius:4px; background:var(--fond); color:inherit; }
+  .recherche input:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  .vide { padding:0 12px 16px; }
+  .fiche { padding:12px; border-top:3px solid var(--ligne); }
+  .ligne { display:grid; gap:16px; margin-bottom:14px; }
+  .champ { min-width:0; }
+  .champ .nom { font-size:11px; font-weight:700; color:var(--label); margin-bottom:3px; }
+  .champ .val { min-height:18px; padding:3px 6px; border:1px solid var(--ligne); border-radius:2px; overflow-wrap:anywhere; }
+  .champ .val.num { text-align:right; }
+  .champ .val.alerte { background:var(--alerte); }
+</style>
+</head>
+<body>
+<div class="recherche">
+  <label for="mail">Entre ton adresse mail pour afficher tes inscriptions</label>
+  <input id="mail" type="email" autocomplete="email" placeholder="prenom.nom@ac-versailles.fr">
+</div>
+<div id="fiches"></div>
+<div id="msg" class="vide"></div>
+
+<script>
+  // ---- À MODIFIER ICI ----
+  const COLONNES_MAIL = ["MAILENS", "MAILENS2"];
+
+  // Disposition : une ligne du tableau = une rangée de la fiche.
+  // Chaque champ : [colonne Grist, libellé affiché, type] (type : "num" pour aligner à droite)
+  const DISPOSITION = [
+    [["Cree_le", "Créé le"]],
+    [["COMITE", "COMITE"]],
+    [["UAI", "UAI"], ["ECOLE", "ECOLE"]],
+    [["MAILECOLE", "MAILECOLE"], ["TELECOLE", "TELECOLE"]],
+    [["NOMENS", "NOMENS"], ["MAILENS", "MAILENS"]],
+    [["CPG","CPG","num"], ["CE1G","CE1G","num"], ["CE2G","CE2G","num"], ["CM1G","CM1G","num"], ["CM2G","CM2G","num"]],
+    [["CPF","CPF","num"], ["CE1F","CE1F","num"], ["CE2F","CE2F","num"], ["CM1F","CM1F","num"], ["CM2F","CM2F","num"]],
+    [["EFFTOTAL", "EFFTOTAL", "num"]],
+    [["COMMENTAIRE", "COMMENTAIRE"]],
+    [["FOOTALECOLE", "FOOTALECOLE"], ["USEP", "USEP"]],
+    [["BESOININT", "BESOININT"], ["LIEU1", "LIEU1"], ["Disponibilite_du_comite", "Disponibilité du comité", "alerte-si-vide"]],
+    [["RENCONTRE", "RENCONTRE"]]
+  ];
+  // ------------------------
+
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function dateHeure(d) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "numeric", minute: "2-digit", hour12: true
+    }).formatToParts(d).map(x => [x.type, x.value]));
+    return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}${p.dayPeriod.toLowerCase()}`;
+  }
+
+  function format(v, col) {
+    if (v === null || v === undefined) return "";
+    if (v instanceof Date) return dateHeure(v);
+    if (typeof v === "boolean") return v ? "vrai" : "faux";
+    if (col === "RENCONTRE" && v === 0) return "";
+    if (Array.isArray(v)) return v.join(", ");
+    if (typeof v === "object") return v.details || JSON.stringify(v);
+    return v;
+  }
+
+  const adresses = v => String(v ?? "").toLowerCase().split(/[;,\s]+/).filter(Boolean);
+
+  function fiche(r) {
+    return '<section class="fiche">' + DISPOSITION.map(rangee =>
+      '<div class="ligne" style="grid-template-columns:repeat(' + rangee.length + ',1fr)">' +
+      rangee.map(([col, libelle, opt]) => {
+        const txt = format(r[col], col);
+        const cls = "val" + (opt === "num" ? " num" : "") +
+                    (opt === "alerte-si-vide" && txt === "" ? " alerte" : "");
+        return '<div class="champ"><div class="nom">' + esc(libelle) + '</div>' +
+               '<div class="' + cls + '">' + esc(txt) + '</div></div>';
+      }).join("") + '</div>'
+    ).join("") + '</section>';
+  }
+
+  let toutes = [];
+  const champ = document.getElementById("mail");
+  const msg = document.getElementById("msg");
+  const zone = document.getElementById("fiches");
+
+  function afficher() {
+    const saisie = champ.value.trim().toLowerCase();
+    zone.innerHTML = "";
+    if (!saisie) { msg.textContent = ""; return; }
+
+    // Correspondance exacte avec l'une des adresses de la ligne
+    const lignes = toutes.filter(r => COLONNES_MAIL.some(c => adresses(r[c]).includes(saisie)));
+    if (!lignes.length) { msg.textContent = "Aucune inscription trouvée pour cette adresse."; return; }
+
+    msg.textContent = "";
+    zone.innerHTML = lignes.map(fiche).join("");
+  }
+
+  champ.addEventListener("input", afficher);
+
+  grist.ready({ requiredAccess: "read table" });
+  grist.onRecords(records => { toutes = records; afficher(); }, { includeColumns: "normal" });
+</script>
+</body>
+</html>
